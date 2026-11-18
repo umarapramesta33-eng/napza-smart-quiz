@@ -84,55 +84,92 @@ def suara_kemenangan():
 
 # ==========================================
 #             DESAIN WEBSITE
+#          FOREST GREEN EDITION
 # ==========================================
 
 st.markdown("""
 <style>
 
+/* Background utama */
 .stApp {
-    background-color: #F5F0E6;
+    background-color: #F7F8F2;
+    color: #26352B;
 }
 
+/* Lebar halaman */
 .block-container {
     max-width: 750px;
     padding-top: 2rem;
+    padding-bottom: 3rem;
 }
 
+/* Judul */
 h1, h2, h3 {
-    color: #42543B;
+    color: #17452E !important;
+    font-weight: 800;
 }
 
-p, label {
-    color: #4D5946;
+/* Tulisan */
+p, label, .stMarkdown {
+    color: #26352B;
 }
 
+/* Kartu pilihan jawaban */
+div[data-testid="stRadio"] {
+    background-color: #FFFFFF;
+    padding: 18px;
+    border-radius: 15px;
+    border: 1px solid #D5E2D0;
+}
+
+/* Tombol */
 .stButton button {
-    background-color: #657653;
-    color: white;
+    background-color: #286344;
+    color: #FFFFFF;
     border-radius: 12px;
     border: none;
-    padding: 12px;
+    padding: 13px;
     font-weight: bold;
     width: 100%;
 }
 
+/* Efek tombol */
 .stButton button:hover {
-    background-color: #42543B;
-    color: white;
+    background-color: #17452E;
+    color: #FFFFFF;
+    border: 1px solid #D6A84F;
 }
 
+/* Progress bar */
 .stProgress > div > div {
-    background-color: #657653;
+    background-color: #286344;
 }
 
-div[data-testid="stRadio"] {
-    background-color: #EAE3D3;
-    padding: 15px;
-    border-radius: 12px;
-}
-
+/* Kotak informasi */
 div[data-testid="stAlert"] {
-    border-radius: 12px;
+    border-radius: 14px;
+}
+
+/* Garis pembatas */
+hr {
+    border-color: #D5E2D0;
+}
+
+/* Input nama */
+.stTextInput input {
+    background-color: #FFFFFF;
+    color: #26352B;
+    border: 1px solid #A8BDA5;
+    border-radius: 10px;
+}
+
+/* Kartu pertanyaan */
+.kartu-soal {
+    background-color: #E5EEDC;
+    padding: 24px;
+    border-radius: 18px;
+    border: 1px solid #C9D9C1;
+    text-align: center;
 }
 
 </style>
@@ -236,13 +273,17 @@ if "hasil_jawaban" not in st.session_state:
 # ==========================================
 
 st.markdown(
-    "<h1 style='text-align:center;'>🌿 NAPZA SMART QUIZ</h1>",
+    """
+    <h1 style='text-align:center;'>
+    🌿 NAPZA SMART QUIZ
+    </h1>
+    """,
     unsafe_allow_html=True
 )
 
 st.markdown(
     """
-    <h4 style='text-align:center; color:#8A7655;'>
+    <h4 style='text-align:center; color:#A17B35;'>
     Kenali, Pahami, Lindungi Diri
     </h4>
     """,
@@ -259,18 +300,17 @@ st.divider()
 if not st.session_state.mulai:
 
     st.markdown(
-        "<h2 style='text-align:center;'>👋 HALO, REMAJA CERDAS!</h2>",
+        """
+        <h2 style='text-align:center;'>
+        👋 HALO, REMAJA CERDAS!
+        </h2>
+        """,
         unsafe_allow_html=True
     )
 
     st.markdown(
         """
-        <div style="
-            background-color:#EAE3D3;
-            padding:22px;
-            border-radius:15px;
-            text-align:center;
-        ">
+        <div class="kartu-soal">
             <h3>🎮 SIAP MENGUJI PENGETAHUANMU?</h3>
             <p>
             Jawab 5 pertanyaan menarik seputar NAPZA.
@@ -326,12 +366,7 @@ elif st.session_state.no_soal < len(pertanyaan):
 
     st.markdown(
         f"""
-        <div style="
-            background-color:#EAE3D3;
-            padding:22px;
-            border-radius:15px;
-            text-align:center;
-        ">
+        <div class="kartu-soal">
             <h1>{soal['emoji']}</h1>
             <h3>SOAL {nomor + 1}</h3>
             <p style="font-size:18px;">
@@ -355,12 +390,10 @@ elif st.session_state.no_soal < len(pertanyaan):
         if st.button("KIRIM JAWABAN ➜"):
 
             if jawaban == soal["benar"]:
-
                 st.session_state.skor += 1
                 st.session_state.hasil_jawaban = True
 
             else:
-
                 st.session_state.hasil_jawaban = False
 
             st.session_state.sudah_jawab = True
@@ -429,7 +462,11 @@ else:
     )
 
     st.markdown(
-        f"<h3 style='text-align:center;'>Hebat, {st.session_state.nama}!</h3>",
+        f"""
+        <h3 style='text-align:center;'>
+        Hebat, {st.session_state.nama}!
+        </h3>
+        """,
         unsafe_allow_html=True
     )
 
@@ -475,12 +512,7 @@ else:
 
     st.markdown(
         """
-        <div style="
-            background-color:#EAE3D3;
-            padding:22px;
-            border-radius:15px;
-            text-align:center;
-        ">
+        <div class="kartu-soal">
             <h3>🌿 PESAN UNTUK KITA SEMUA</h3>
             <h2>KENALI, PAHAMI, LINDUNGI DIRI!</h2>
             <p>Jadilah remaja cerdas, sehat, dan berprestasi.</p>
