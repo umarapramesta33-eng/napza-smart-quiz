@@ -1,8 +1,12 @@
 import streamlit as st
+import io
+import math
+import struct
+import wave
 
-# =====================================
-#       NAPZA SMART QUIZ
-# =====================================
+# ==========================================
+#             KONFIGURASI
+# ==========================================
 
 st.set_page_config(
     page_title="NAPZA SMART QUIZ",
@@ -10,232 +14,494 @@ st.set_page_config(
     layout="centered"
 )
 
-# Tampilan website
+# ==========================================
+#             SOUND EFFECT
+# ==========================================
+
+def buat_suara(frekuensi, durasi=0.25):
+    sample_rate = 44100
+    buffer = io.BytesIO()
+
+    with wave.open(buffer, "wb") as audio:
+        audio.setnchannels(1)
+        audio.setsampwidth(2)
+        audio.setframerate(sample_rate)
+
+        frames = []
+
+        for i in range(int(sample_rate * durasi)):
+            waktu = i / sample_rate
+            volume = 0.35 * (1 - i / (sample_rate * durasi))
+
+            nilai = int(
+                32767 * volume *
+                math.sin(2 * math.pi * frekuensi * waktu)
+            )
+
+            frames.append(struct.pack("<h", nilai))
+
+        audio.writeframes(b"".join(frames))
+
+    return buffer.getvalue()
+
+
+def suara_kemenangan():
+    sample_rate = 44100
+    buffer = io.BytesIO()
+
+    nada = [
+        (523, 0.18),
+        (659, 0.18),
+        (784, 0.18),
+        (1047, 0.35)
+    ]
+
+    with wave.open(buffer, "wb") as audio:
+        audio.setnchannels(1)
+        audio.setsampwidth(2)
+        audio.setframerate(sample_rate)
+
+        frames = []
+
+        for frekuensi, durasi in nada:
+            jumlah = int(sample_rate * durasi)
+
+            for i in range(jumlah):
+                waktu = i / sample_rate
+                volume = 0.30 * (1 - i / jumlah)
+
+                nilai = int(
+                    32767 * volume *
+                    math.sin(2 * math.pi * frekuensi * waktu)
+                )
+
+                frames.append(struct.pack("<h", nilai))
+
+        audio.writeframes(b"".join(frames))
+
+    return buffer.getvalue()
+
+
+# ==========================================
+#             DESAIN WEBSITE
+# ==========================================
+
 st.markdown("""
 <style>
+
 .stApp {
     background-color: #F5F0E6;
 }
+
+.block-container {
+    max-width: 750px;
+    padding-top: 2rem;
+}
+
 h1, h2, h3 {
     color: #42543B;
 }
+
+p, label {
+    color: #4D5946;
+}
+
 .stButton button {
     background-color: #657653;
     color: white;
-    border-radius: 10px;
+    border-radius: 12px;
     border: none;
+    padding: 12px;
+    font-weight: bold;
+    width: 100%;
 }
-.stForm {
+
+.stButton button:hover {
+    background-color: #42543B;
+    color: white;
+}
+
+.stProgress > div > div {
+    background-color: #657653;
+}
+
+div[data-testid="stRadio"] {
     background-color: #EAE3D3;
-    padding: 20px;
-    border-radius: 15px;
+    padding: 15px;
+    border-radius: 12px;
 }
+
+div[data-testid="stAlert"] {
+    border-radius: 12px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# Judul
-st.markdown(
-    "<h1 style='text-align:center;'>NAPZA SMART QUIZ</h1>",
-    unsafe_allow_html=True
-)
 
-st.markdown(
-    "<h4 style='text-align:center;color:#8A7655;'>"
-    "Kenali, Pahami, Lindungi Diri</h4>",
-    unsafe_allow_html=True
-)
-
-st.divider()
-
-st.write(
-    "Selamat datang! Uji pengetahuanmu tentang NAPZA "
-    "melalui lima pertanyaan berikut."
-)
-
-st.info(
-    "Setiap jawaban benar mendapatkan 1 poin. "
-    "Kerjakan dengan teliti, ya!"
-)
-
-# =====================================
-#           DATA PERTANYAAN
-# =====================================
+# ==========================================
+#             DATA PERTANYAAN
+# ==========================================
 
 pertanyaan = [
+
     {
-        "soal": "1. Apa kepanjangan dari NAPZA?",
+        "emoji": "🌿",
+        "soal": "Apa kepanjangan dari NAPZA?",
         "pilihan": [
             "A. Narkotika, Psikotropika, dan Zat Adiktif",
             "B. Narkoba dan Zat Alami",
             "C. Narkotika dan Zat Aman"
         ],
-        "benar": "A. Narkotika, Psikotropika, dan Zat Adiktif"
+        "benar": "A. Narkotika, Psikotropika, dan Zat Adiktif",
+        "penjelasan": "NAPZA merupakan singkatan dari Narkotika, Psikotropika, dan Zat Adiktif."
     },
+
     {
-        "soal": "2. Apa yang harus dilakukan jika diajak mencoba zat berbahaya?",
+        "emoji": "🚫",
+        "soal": "Apa yang harus dilakukan jika diajak mencoba zat berbahaya?",
         "pilihan": [
             "A. Mengikuti ajakan",
             "B. Menolak dan menjauh",
             "C. Mencoba sekali saja"
         ],
-        "benar": "B. Menolak dan menjauh"
+        "benar": "B. Menolak dan menjauh",
+        "penjelasan": "Menolak ajakan dan menjauh merupakan langkah untuk melindungi diri."
     },
+
     {
-        "soal": "3. Mengapa remaja perlu mengetahui informasi NAPZA?",
+        "emoji": "🧠",
+        "soal": "Mengapa remaja perlu mengetahui informasi NAPZA?",
         "pilihan": [
             "A. Agar terlihat keren",
             "B. Agar mengenali risiko dan melindungi diri",
             "C. Agar bisa mencobanya"
         ],
-        "benar": "B. Agar mengenali risiko dan melindungi diri"
+        "benar": "B. Agar mengenali risiko dan melindungi diri",
+        "penjelasan": "Pengetahuan membantu remaja mengenali bahaya dan mengambil keputusan yang tepat."
     },
+
     {
-        "soal": "4. Apa yang dilakukan jika teman mengajak melakukan hal berisiko?",
+        "emoji": "🤝",
+        "soal": "Apa yang dilakukan jika teman mengajak melakukan hal berisiko?",
         "pilihan": [
             "A. Mengikuti teman",
             "B. Membiarkannya",
             "C. Mencari bantuan orang terpercaya"
         ],
-        "benar": "C. Mencari bantuan orang terpercaya"
+        "benar": "C. Mencari bantuan orang terpercaya",
+        "penjelasan": "Orang tua, guru, atau orang dewasa terpercaya dapat membantu menghadapi situasi berisiko."
     },
+
     {
-        "soal": "5. Bagaimana cara melindungi diri dari penyalahgunaan NAPZA?",
+        "emoji": "🛡️",
+        "soal": "Bagaimana cara melindungi diri dari penyalahgunaan NAPZA?",
         "pilihan": [
             "A. Memilih lingkungan pertemanan positif",
             "B. Mengikuti semua ajakan teman",
             "C. Mengabaikan informasi"
         ],
-        "benar": "A. Memilih lingkungan pertemanan positif"
+        "benar": "A. Memilih lingkungan pertemanan positif",
+        "penjelasan": "Lingkungan positif membantu kita membangun kebiasaan dan keputusan yang sehat."
     }
+
 ]
 
-# =====================================
-#            FORM KUIS
-# =====================================
 
-with st.form("napza_quiz"):
+# ==========================================
+#             SESSION STATE
+# ==========================================
 
-    nama = st.text_input("Masukkan nama peserta:")
+if "nama" not in st.session_state:
+    st.session_state.nama = ""
 
-    jawaban_peserta = []
+if "mulai" not in st.session_state:
+    st.session_state.mulai = False
 
-    for i, item in enumerate(pertanyaan):
-        st.markdown("---")
-        st.subheader(item["soal"])
+if "skor" not in st.session_state:
+    st.session_state.skor = 0
 
-        jawaban = st.radio(
-            "Pilih jawaban:",
-            item["pilihan"],
-            key=f"jawaban_{i}"
-        )
+if "no_soal" not in st.session_state:
+    st.session_state.no_soal = 0
 
-        jawaban_peserta.append(jawaban)
+if "sudah_jawab" not in st.session_state:
+    st.session_state.sudah_jawab = False
 
-    kirim = st.form_submit_button("LIHAT HASIL KUIS")
+if "hasil_jawaban" not in st.session_state:
+    st.session_state.hasil_jawaban = False
 
-# =====================================
-#           PROSES NILAI
-# =====================================
 
-if kirim:
+# ==========================================
+#             HEADER WEBSITE
+# ==========================================
 
-    if not nama.strip():
-        st.warning("Silakan masukkan nama terlebih dahulu.")
+st.markdown(
+    "<h1 style='text-align:center;'>🌿 NAPZA SMART QUIZ</h1>",
+    unsafe_allow_html=True
+)
 
-    else:
-        skor = 0
+st.markdown(
+    """
+    <h4 style='text-align:center; color:#8A7655;'>
+    Kenali, Pahami, Lindungi Diri
+    </h4>
+    """,
+    unsafe_allow_html=True
+)
 
-        for i in range(5):
-            if jawaban_peserta[i] == pertanyaan[i]["benar"]:
-                skor += 1
+st.divider()
 
-        st.divider()
 
-        st.header("HASIL KUIS")
-        st.write(f"Nama peserta: **{nama}**")
+# ==========================================
+#             HALAMAN PEMBUKA
+# ==========================================
 
-        st.metric("SKOR AKHIR", f"{skor}/5")
+if not st.session_state.mulai:
 
-        st.progress(skor / 5)
+    st.markdown(
+        "<h2 style='text-align:center;'>👋 HALO, REMAJA CERDAS!</h2>",
+        unsafe_allow_html=True
+    )
 
-        st.subheader("Pembahasan Jawaban")
+    st.markdown(
+        """
+        <div style="
+            background-color:#EAE3D3;
+            padding:22px;
+            border-radius:15px;
+            text-align:center;
+        ">
+            <h3>🎮 SIAP MENGUJI PENGETAHUANMU?</h3>
+            <p>
+            Jawab 5 pertanyaan menarik seputar NAPZA.
+            Kumpulkan poin dan buktikan pengetahuanmu!
+            </p>
+            <h2>⭐ 5 SOAL | 5 POIN</h2>
+            <p>🔊 Aktifkan suara perangkatmu untuk pengalaman kuis!</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-        for i in range(5):
-            if jawaban_peserta[i] == pertanyaan[i]["benar"]:
-                st.success(f"Soal {i+1}: Jawaban benar!")
-            else:
-                st.error(
-                    f"Soal {i+1}: Jawaban benar adalah "
-                    f"{pertanyaan[i]['benar']}"
-                )
+    st.write("")
 
-        # KATEGORI HASIL
-        st.divider()
+    nama = st.text_input(
+        "👤 Masukkan nama peserta:",
+        placeholder="Tulis namamu di sini..."
+    )
 
-        if skor >= 4:
-            st.success("⭐ REMAJA CERDAS!")
-            st.write(
-                "Pengetahuanmu tentang NAPZA sudah baik. "
-                "Pertahankan sikap positif dan lindungi dirimu!"
-            )
+    if st.button("🚀 MULAI KUIS SEKARANG"):
 
-            st.code("""
-             *
-            ***
-           *****
-          *******
-         *********
-          *******
-           *****
-            ***
-             *
-            """)
-
-            st.balloons()
-
-        elif skor >= 2:
-            st.warning("💡 TERUS BELAJAR!")
-            st.write(
-                "Pengetahuanmu sudah cukup. "
-                "Ayo tingkatkan lagi pemahamanmu!"
-            )
-
-            st.code("""
-           *********
-         **         **
-        **           **
-        **           **
-         **         **
-           *********
-              ***
-           *********
-            """)
+        if nama.strip():
+            st.session_state.nama = nama.strip()
+            st.session_state.mulai = True
+            st.rerun()
 
         else:
-            st.info("📖 YUK BELAJAR LAGI!")
-            st.write(
-                "Jangan menyerah! Pelajari kembali informasi "
-                "NAPZA dari sumber terpercaya."
+            st.warning("Ups! Masukkan namamu terlebih dahulu 😊")
+
+
+# ==========================================
+#             HALAMAN KUIS
+# ==========================================
+
+elif st.session_state.no_soal < len(pertanyaan):
+
+    nomor = st.session_state.no_soal
+    soal = pertanyaan[nomor]
+
+    st.markdown(
+        f"### 👤 Peserta: {st.session_state.nama}"
+    )
+
+    st.progress(
+        (nomor + 1) / len(pertanyaan)
+    )
+
+    st.caption(
+        f"PERTANYAAN {nomor + 1} DARI {len(pertanyaan)}"
+    )
+
+    st.markdown("---")
+
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#EAE3D3;
+            padding:22px;
+            border-radius:15px;
+            text-align:center;
+        ">
+            <h1>{soal['emoji']}</h1>
+            <h3>SOAL {nomor + 1}</h3>
+            <p style="font-size:18px;">
+            {soal['soal']}
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    if not st.session_state.sudah_jawab:
+
+        jawaban = st.radio(
+            "💭 Pilih jawaban yang menurutmu benar:",
+            soal["pilihan"],
+            key=f"pilihan_{nomor}"
+        )
+
+        if st.button("KIRIM JAWABAN ➜"):
+
+            if jawaban == soal["benar"]:
+
+                st.session_state.skor += 1
+                st.session_state.hasil_jawaban = True
+
+            else:
+
+                st.session_state.hasil_jawaban = False
+
+            st.session_state.sudah_jawab = True
+
+            st.rerun()
+
+    else:
+
+        if st.session_state.hasil_jawaban:
+
+            st.success("🎉 BENAR! KERJA BAGUS!")
+
+            st.audio(
+                buat_suara(880),
+                format="audio/wav",
+                autoplay=True
             )
 
-            st.code("""
-        *****************
-        *               *
-        *   NAPZA       *
-        *   SMART QUIZ  *
-        *               *
-        *****************
-            """)
+        else:
 
-        # PENUTUP
-        st.divider()
+            st.error("💡 BELUM TEPAT! TETAP SEMANGAT!")
 
-        st.markdown(
-            "<h3 style='text-align:center;'>"
-            "KENALI, PAHAMI, LINDUNGI DIRI!</h3>",
-            unsafe_allow_html=True
+            st.audio(
+                buat_suara(260),
+                format="audio/wav",
+                autoplay=True
+            )
+
+            st.write(
+                f"Jawaban yang benar: **{soal['benar']}**"
+            )
+
+        st.info(
+            f"📚 Pembahasan: {soal['penjelasan']}"
         )
 
-        st.caption(
-            "NAPZA SMART QUIZ | Edukasi Remaja"
+        if st.button("LANJUT KE SOAL BERIKUTNYA ➜"):
+
+            st.session_state.no_soal += 1
+            st.session_state.sudah_jawab = False
+
+            st.rerun()
+
+
+# ==========================================
+#             HALAMAN HASIL
+# ==========================================
+
+else:
+
+    st.balloons()
+
+    st.audio(
+        suara_kemenangan(),
+        format="audio/wav",
+        autoplay=True
+    )
+
+    st.markdown(
+        """
+        <h1 style='text-align:center;'>
+        🏆 KUIS SELESAI!
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        f"<h3 style='text-align:center;'>Hebat, {st.session_state.nama}!</h3>",
+        unsafe_allow_html=True
+    )
+
+    st.divider()
+
+    skor = st.session_state.skor
+
+    st.metric(
+        "⭐ SKOR AKHIR",
+        f"{skor}/5"
+    )
+
+    st.progress(skor / 5)
+
+    if skor >= 4:
+
+        st.success("🌟 REMAJA CERDAS!")
+
+        st.write(
+            "Wah, pengetahuanmu tentang NAPZA sudah baik! "
+            "Pertahankan sikap positif dan terus lindungi dirimu."
         )
+
+    elif skor >= 2:
+
+        st.warning("💡 TERUS BELAJAR!")
+
+        st.write(
+            "Pengetahuanmu sudah cukup. "
+            "Yuk, tingkatkan lagi pemahamanmu tentang NAPZA!"
+        )
+
+    else:
+
+        st.info("📖 YUK BELAJAR LAGI!")
+
+        st.write(
+            "Jangan menyerah! Terus belajar dan kenali "
+            "informasi NAPZA dari sumber terpercaya."
+        )
+
+    st.divider()
+
+    st.markdown(
+        """
+        <div style="
+            background-color:#EAE3D3;
+            padding:22px;
+            border-radius:15px;
+            text-align:center;
+        ">
+            <h3>🌿 PESAN UNTUK KITA SEMUA</h3>
+            <h2>KENALI, PAHAMI, LINDUNGI DIRI!</h2>
+            <p>Jadilah remaja cerdas, sehat, dan berprestasi.</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    if st.button("🔄 MAIN LAGI"):
+
+        st.session_state.nama = ""
+        st.session_state.mulai = False
+        st.session_state.skor = 0
+        st.session_state.no_soal = 0
+        st.session_state.sudah_jawab = False
+        st.session_state.hasil_jawaban = False
+
+        st.rerun()
+
+    st.caption(
+        "NAPZA SMART QUIZ | Media Edukasi Remaja"
+    )
